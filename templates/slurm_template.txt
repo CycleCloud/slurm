@@ -1,0 +1,245 @@
+############################
+## Slurm Configuration File ##
+############################
+
+[parameters General Settings]
+Order = 10
+
+    [[parameters Cloud Service Provider Configuration]]
+    Description = Configure the Cloud Provider account options.
+    Order = 10
+
+        [[[parameter CloudProvider]]]
+        Label = Cloud Provider
+        ParameterType = Cloud.Provider
+
+        [[[parameter Credentials]]]
+        Description = The credentials for the cloud provider
+        ParameterType = Cloud.Credentials
+
+        [[[parameter Region]]]
+        Label = Region
+        Description = Deployment Location
+        ParameterType = Cloud.Region
+
+
+[parameters Cluster Software]
+Order = 20
+
+    [[parameters Software]]
+    Description = Specify the base OS and optional cluster-init spec(s) from your locker.
+    Order = 10
+
+        [[[parameter MasterImageName]]]
+        Label = Master OS
+        Description = Base OS for the master node
+        ParameterType = Cloud.Image
+        Config.OS = linux
+        DefaultValue = cycle.image.centos7
+        Disabled = true
+
+        [[[parameter MasterSpecs]]]
+        Label = Cluster-Init
+        DefaultValue = =undefined
+        Description = Cluster init specs to apply to the master node
+        ParameterType = Cloud.ClusterInitSpecs
+    
+        [[[parameter ExecuteImageName]]]
+        Label = Execute OS
+        Description = Base OS for execute nodes
+        ParameterType = Cloud.Image
+        Config.OS = linux
+        DefaultValue = cycle.image.centos7
+        Disabled = true
+
+        [[[parameter ExecuteSpecs]]]
+        Label = Cluster-Init
+        DefaultValue = =undefined
+        Description = Cluster init specs to apply to execute nodes
+        ParameterType = Cloud.ClusterInitSpecs
+
+    [[parameters Node Access]]
+    Description = "Specify the credentials required for access to the node.  The Keypair Path specifies the path on local machines for cyclecloud CLI access."
+    Order = 20
+
+        [[[parameter keypairLocation]]]
+        Label = Keypair Path
+        Description = The path to the keypair
+        DefaultValue = ~/.ssh/cyclecloud.pem
+        Required = True
+
+[parameters Compute Backend]
+Order = 30
+
+    [[parameters Instance Types]]
+    Description = "The cluster, in this case, has two roles: the scheduler master-node with shared filer and the execute hosts. Configure which instance types to use based on the requirements of your application."
+    Order = 10
+
+        [[[parameter MasterMachineType]]]
+        Label = Master Type
+        Description = The machine type for scheduler master and shared filer.
+        ParameterType = Cloud.MachineType
+            [[[[record Config.ProviderDefaults]]]]
+            AWS = m3.large
+            Azure = Standard_A4
+            Azure_classic = A4
+            GCP = n1-standard-4
+
+        [[[parameter ExecuteMachineType]]]
+        Label = Execute Type
+        Description = The machine type for execute nodes
+        ParameterType = Cloud.MachineType
+            [[[[record Config.ProviderDefaults]]]]
+            AWS = m3.large
+            Azure = Standard_A4
+            Azure_classic = A4
+            GCP = n1-standard-4
+
+    [[parameters Auto-Scaling]]
+    Description = "The cluster can autoscale to the workload, adding execute hosts as jobs are queued. To enable this check the box below and choose the initial and maximum core counts for the cluster"
+    Order = 20
+
+        [[[parameter Autoscale]]]
+        Label = Autoscale
+        DefaultValue = true
+        Widget.Plugin = pico.form.BooleanCheckBox
+        Widget.Label = Start and stop execute nodes automatically
+
+        [[[parameter InitialExecuteCoreCount]]]
+        Label = Initial Cores
+        Description = The number of execute cores to launch on startup
+        DefaultValue = 0
+        Config.Plugin = pico.form.NumberTextBox
+        Config.MinValue = 0
+        Config.MaxValue = 5000
+        Config.IntegerOnly = true
+
+        [[[parameter MaxExecuteCoreCount]]]
+        Label = Max Cores
+        Description = The total number of execute cores to start
+        DefaultValue = 10
+        Config.Plugin = pico.form.NumberTextBox
+        Config.MinValue = 1
+        Config.MaxValue = 5000
+        Config.IntegerOnly = true
+
+[parameters Networking]
+Order = 40
+
+    [[parameters General]]
+    Order = 10
+
+        [[[parameter ReturnProxy]]]
+        Label = Return Proxy
+        DefaultValue = true
+        ParameterType = Boolean
+        Config.Label = Use SSH tunnel to connect to CycleCloud (required if direct access is blocked)
+
+        [[[parameter ExecuteNodesPublic]]]
+        Label = Public Execute
+        DefaultValue = false
+        ParameterType = Boolean
+        Config.Label = Access execute nodes from the Internet
+        
+
+
+    [[parameters Azure Virtual Network Configuration]]
+    Order = 40
+    Conditions.Excluded := CloudProvider !== "Azure"
+
+        [[[parameter azureSubnetId]]]
+        Label = Subnet ID
+        Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
+        Conditions.Required := CloudProvider === "Azure"
+        Conditions.Excluded := CloudProvider !== "Azure"
+        ParameterType = Azure.Subnet
+
+    [[parameters Azure Classic Virtual Network Configuration]]
+    Order = 50
+    Conditions.Excluded := CloudProvider !== "Azure_classic"
+
+        [[[parameter azureVirtualNetwork]]]
+        Label = VNet Name
+        Description = Azure Virtual Network
+        Conditions.Required := CloudProvider === "Azure_classic"
+        Conditions.Excluded := CloudProvider !== "Azure_classic"
+
+        [[[parameter azureSubnetName]]]
+        Label = Subnet
+        Description = Azure subnet name
+        Conditions.Required := CloudProvider === "Azure_classic"
+        Conditions.Excluded := CloudProvider !== "Azure_classic"
+
+[cluster Slurm]
+FormLayout = selectionpanel
+#IconUrl = static/cloud/cluster/ui/ClusterIcon/pbspro-icon.png
+
+# Enable/disable autoscaling
+# The scheduler load will determine the number of execute machines that are started, machines will terminate themselves if they are idle
+# and approaching a billing cycle.
+Autoscale = $Autoscale
+
+    # defines default values used for all nodes. This is inherited automatically by all nodes.
+    # You can create other nodes like this by adding Abstract = true to them and adding
+    # Extends = foo to the nodes that should inherit the definitions from foo.
+    [[node defaults]]
+    Credentials = $Credentials
+    SubnetId = $azureSubnetId
+    Region = $Region
+
+    KeyPairLocation = $keypairLocation
+
+    # Azure Classic
+    Azure.VirtualNetwork = ${IfThenElse(CloudProvider==="Azure_classic", azureVirtualNetwork, undefined())}
+    Azure.SubnetName = ${IfThenElse(CloudProvider==="Azure_classic", azureSubnetName, undefined())}
+    Azure.IaaS = ${IfThenElse(CloudProvider==="Azure_classic", true, undefined())}
+
+        [[[cluster-init slurm:default:1.0.0]]]
+
+        [[[configuration]]]
+        # You can specify Chef attributes using dot notation if needed. For example, you
+        # can use it to change the default CycleServer admin password (defaults to cluster name):
+        # cyclecloud.cluster.user.name = cluster.user
+        # cyclecloud.cluster.user.password = abc;123
+        # cyclecloud.cluster.user.uid = 55555
+        # cyclecloud.cluster.user.gid = 55555
+
+    [[node master]]
+    MachineType = $MasterMachineType
+    IsReturnProxy = $ReturnProxy
+    ImageName = $MasterImageName
+    AdditionalClusterInitSpecs = $MasterSpecs
+
+        [[[cluster-init slurm:master:1.0.0]]]
+
+        # cycle_server.admin.pass=123456
+
+        # Configure Azure external input endpoints (for example SSH)
+        [[[input-endpoint SSH]]]
+        PrivatePort = 22
+        PublicPort = 22
+
+        [[[input-endpoint ganglia]]]
+        PrivatePort = 8652
+        PublicPort = 8652
+
+
+    [[nodearray execute]]
+    MachineType = $ExecuteMachineType
+    ImageName = $ExecuteImageName
+    AdditionalClusterInitSpecs = $ExecuteSpecs
+
+    # The initial number of cores of this type to start when the cluster starts
+    InitialCoreCount= $InitialExecuteCoreCount
+
+    # The maximum number of cores to start when the cluster is configured for autoscaling
+    MaxCoreCount = $MaxExecuteCoreCount
+
+        [[[cluster-init slurm:execute:1.0.0]]]
+
+        [[[network-interface]]]
+        AssociatePublicIpAddress = $ExecuteNodesPublic
+
+        [[[input-endpoint SSH]]]
+        PrivatePort = 22
+        PublicPort = 55100

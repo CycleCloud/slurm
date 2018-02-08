@@ -1,0 +1,4 @@
+.vscode/**
+.project/packaged_chef/default/chef/roles.tgz
+.project/packaged_chef/default/chef/site-cookbooks.tgz
+blobs/slurm**
