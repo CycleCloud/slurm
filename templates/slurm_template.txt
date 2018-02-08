@@ -21,6 +21,7 @@ Order = 10
         Label = Region
         Description = Deployment Location
         ParameterType = Cloud.Region
+        Default = West US 2
 
 
 [parameters Cluster Software]
@@ -80,20 +81,14 @@ Order = 30
         Description = The machine type for scheduler master and shared filer.
         ParameterType = Cloud.MachineType
             [[[[record Config.ProviderDefaults]]]]
-            AWS = m3.large
             Azure = Standard_A4
-            Azure_classic = A4
-            GCP = n1-standard-4
 
         [[[parameter ExecuteMachineType]]]
         Label = Execute Type
         Description = The machine type for execute nodes
         ParameterType = Cloud.MachineType
             [[[[record Config.ProviderDefaults]]]]
-            AWS = m3.large
             Azure = Standard_A4
-            Azure_classic = A4
-            GCP = n1-standard-4
 
     [[parameters Auto-Scaling]]
     Description = "The cluster can autoscale to the workload, adding execute hosts as jobs are queued. To enable this check the box below and choose the initial and maximum core counts for the cluster"
@@ -154,21 +149,6 @@ Order = 40
         Conditions.Excluded := CloudProvider !== "Azure"
         ParameterType = Azure.Subnet
 
-    [[parameters Azure Classic Virtual Network Configuration]]
-    Order = 50
-    Conditions.Excluded := CloudProvider !== "Azure_classic"
-
-        [[[parameter azureVirtualNetwork]]]
-        Label = VNet Name
-        Description = Azure Virtual Network
-        Conditions.Required := CloudProvider === "Azure_classic"
-        Conditions.Excluded := CloudProvider !== "Azure_classic"
-
-        [[[parameter azureSubnetName]]]
-        Label = Subnet
-        Description = Azure subnet name
-        Conditions.Required := CloudProvider === "Azure_classic"
-        Conditions.Excluded := CloudProvider !== "Azure_classic"
 
 [cluster Slurm]
 FormLayout = selectionpanel
@@ -189,10 +169,6 @@ Autoscale = $Autoscale
 
     KeyPairLocation = $keypairLocation
 
-    # Azure Classic
-    Azure.VirtualNetwork = ${IfThenElse(CloudProvider==="Azure_classic", azureVirtualNetwork, undefined())}
-    Azure.SubnetName = ${IfThenElse(CloudProvider==="Azure_classic", azureSubnetName, undefined())}
-    Azure.IaaS = ${IfThenElse(CloudProvider==="Azure_classic", true, undefined())}
 
         [[[cluster-init slurm:default:1.0.0]]]
 
