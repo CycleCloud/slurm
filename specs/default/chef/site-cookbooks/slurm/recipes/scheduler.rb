@@ -7,7 +7,7 @@ slurmuser = node[:slurm][:user][:name]
 
 nodename = node[:cyclecloud][:instance][:hostname]
 
-slurmrpms = %w[slurm slurm-devel slurm-example-configs slurm-slurmctld slurm-slurmd]
+slurmrpms = %w[slurm slurm-devel slurm-example-configs slurm-slurmctld slurm-slurmd slurm-perlapi slurm-torque slurm-openlava]
 slurmrpms.each do |slurmpkg|
   jetpack_download "#{slurmpkg}-#{slurmver}.#{slurmarch}.rpm" do
     project "slurm"
@@ -114,6 +114,14 @@ link '/etc/slurm/slurm.conf' do
   owner "#{slurmuser}"
   group "#{slurmuser}"
   mode '0700'
+end
+
+cookbook_file "/etc/security/limits.d/slurm-limits.conf" do
+  source "slurm-limits.conf"
+  owner "root"
+  group "root"
+  mode "0644"
+  action :create
 end
 
 service 'slurmctld' do
