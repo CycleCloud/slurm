@@ -172,7 +172,7 @@ Order = 40
 
 [cluster Slurm]
 FormLayout = selectionpanel
-#IconUrl = static/cloud/cluster/ui/ClusterIcon/pbspro-icon.png
+IconUrl = http://download.cyclecomputing.com/logos/Slurm_logo.svg.png
 
 # Enable/disable autoscaling
 # The scheduler load will determine the number of execute machines that are started, machines will terminate themselves if they are idle
