@@ -85,8 +85,11 @@ link '/etc/slurm/slurm.conf' do
   mode '0700'
 end
 
-service 'slurmd' do
-    action [:enable, :start]
+defer_block "Defer starting slurmd until end of converge" do
+  service 'slurmd' do
+      action [:enable, :start]
+  end
 end
+
   
 include_recipe "slurm::autostop"
