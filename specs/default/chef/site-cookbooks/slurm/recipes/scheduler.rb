@@ -11,7 +11,6 @@ slurmrpms = %w[slurm slurm-devel slurm-example-configs slurm-slurmctld slurm-slu
 slurmrpms.each do |slurmpkg|
   jetpack_download "#{slurmpkg}-#{slurmver}.#{slurmarch}.rpm" do
     project "slurm"
-    thunderball_url "#{slurmpkg}-#{slurmver}.#{slurmarch}.rpm"
     not_if { ::File.exist?("#{node[:jetpack][:downloads]}/#{slurmpkg}-#{slurmver}.#{slurmarch}.rpm") }
   end
 end
@@ -129,3 +128,4 @@ service 'slurmctld' do
 end
 
 include_recipe "slurm::autostart"
+
