@@ -7,7 +7,7 @@ long_description 'Installs/Configures slurm'
 version '0.1.0'
 chef_version '>= 12.1' if respond_to?(:chef_version)
 
-%w{ thunderball cuser cganglia cycle_server cshared cyclecloud-base }.each {|c| depends c}
+%w{ cuser cshared }.each {|c| depends c}
 
 # The `issues_url` points to the location where issues for this cookbook are
 # tracked.  A `View Issues` link will be displayed on this cookbook's page when
