@@ -101,7 +101,7 @@ end
 
 bash 'Add nodes to slurm config' do
   code <<-EOH
-    iplist=$(grep ip- /etc/hosts | awk '{print $3}' | xargs | sed 's/ /,/g')
+    iplist=$(grep ip- /etc/hosts | awk '{print $2}' | cut -d'.' -f1 | xargs | sed 's/ /,/g')
     echo "\nNodename=${iplist} State=FUTURE" >> /sched/slurm.conf
     touch /etc/slurm.installed
     EOH
