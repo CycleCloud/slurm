@@ -29,6 +29,10 @@ Autoscale = $Autoscale
     
         [[[cluster-init slurm:master:1.0.0]]]
 
+        [[[input-endpoint ganglia]]]
+        PrivatePort = 8652
+        PublicPort = 8652
+
 
     [[nodearray execute]]
     MachineType = $ExecuteMachineType
