@@ -95,13 +95,13 @@ template '/sched/slurm.conf' do
   source 'slurm.conf.erb'
   action :create_if_missing
   variables lazy {{
-    :nodename => nodename
+    :nodename => node[:machinename]
   }}
 end
 
 bash 'Add nodes to slurm config' do
   code <<-EOH
-    iplist=$(grep ip- /etc/hosts | awk '{print $2}' | xargs | sed 's/ /,/g')
+    iplist=$(grep ip- /etc/hosts | awk '{print $2}' | cut -d'.' -f1 | xargs | sed 's/ /,/g')
     echo "\nNodename=${iplist} State=FUTURE" >> /sched/slurm.conf
     touch /etc/slurm.installed
     EOH
