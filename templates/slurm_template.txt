@@ -5,23 +5,16 @@
 
 [cluster Slurm]
 FormLayout = selectionpanel
-IconUrl = https://github.com/CycleCloud/slurm/blob/master/icon.png
+IconUrl = https://github.com/CycleCloud/slurm/raw/master/logo.png
 
-# Enable/disable autoscaling
-# The scheduler load will determine the number of execute machines that are started, machines will terminate themselves if they are idle
-# and approaching a billing cycle.
 Autoscale = $Autoscale
 
-    # defines default values used for all nodes. This is inherited automatically by all nodes.
-    # You can create other nodes like this by adding Abstract = true to them and adding
-    # Extends = foo to the nodes that should inherit the definitions from foo.
     [[node defaults]]
     Credentials = $Credentials    
     ImageName = $ImageName
     SubnetId = $SubnetId
     Region = $Region
-    KeyPairLocation = $keypairLocation
-
+    KeyPairLocation = ~/.ssh/cyclecloud.pem
     AdditionalClusterInitSpecs = $DefaultClusterInitSpecs
     
         [[[cluster-init slurm:default:1.0.0]]]
@@ -32,40 +25,23 @@ Autoscale = $Autoscale
     [[node master]]
     MachineType = $MasterMachineType
     IsReturnProxy = $ReturnProxy
-
     AdditionalClusterInitSpecs = $MasterClusterInitSpecs
     
         [[[cluster-init slurm:master:1.0.0]]]
 
-        # Configure Azure external input endpoints (for example SSH)
-        [[[input-endpoint SSH]]]
-        PrivatePort = 22
-        PublicPort = 22
-
-        [[[input-endpoint ganglia]]]
-        PrivatePort = 8652
-        PublicPort = 8652
-
 
     [[nodearray execute]]
     MachineType = $ExecuteMachineType
-
-    # The initial number of cores of this type to start when the cluster starts
-    InitialCoreCount= $InitialExecuteCoreCount
-
-    # The maximum number of cores to start when the cluster is configured for autoscaling
     MaxCoreCount = $MaxExecuteCoreCount
 
-    # Azure Low Priority Instances?
-    Interruptible = $azureUseLowPrio
-
+    Interruptible = $UseLowPrio
     AdditionalClusterInitSpecs = $ExecuteClusterInitSpecs
 
         [[[cluster-init slurm:execute:1.0.0]]]
 
-        [[[network-interface eth0]]]
-        AssociatePublicIpAddress = false
-	
+        [[[network-interface]]]
+        AssociatePublicIpAddress = $ExecuteNodesPublic
+
 
 [parameters About]
 Order = 1
@@ -75,7 +51,12 @@ Order = 1
         [[[parameter Slurm]]]
         HideLabel = true
         Config.Plugin = pico.widget.HtmlTemplateWidget
-        Config.Template := "<table><tr><td><img src='https://github.com/CycleCloud/slurm/blob/master/icon.png' width='192' height='192'></td></tr><tr><td><p>Slurm is a system for building and running Linux Containers. See the <a href=\"https://www.schedmd.com/\" target=\"_blank\">Slurm project site</a> for an overview.</p></td></tr></table>"
+        Config.Template := "<table><tr><td><img src='https://github.com/CycleCloud/slurm/raw/master/logo.png' width='192' height='192'></td></tr><tr><td><p>Slurm is a highly configurable open source workload manager. See the <a href=\"https://www.schedmd.com/\" target=\"_blank\">Slurm project site</a> for an overview.</p></td></tr></table>"
+
+        [[[parameter Readme]]]
+        HideLabel = true
+        Config.Plugin = pico.widget.HtmlTemplateWidget
+        Config.Template = "Follow the instructions in the <a href=\"https://github.com/CycleCloud/slurm/\" target=\"_blank\">README</a> for details on instructions on extending and configuring the Project for your environment."
 
 [parameters Required Settings]
 Order = 10
@@ -84,25 +65,24 @@ Order = 10
     Description = "The cluster, in this case, has two roles: the scheduler master-node with shared filer and the execute hosts. Configure which VM types to use based on the requirements of your application."
     Order = 20
 
-            [[[parameter Region]]]
+
+        [[[parameter Region]]]
         Label = Region
         Description = Deployment Location
         ParameterType = Cloud.Region
         DefaultValue = westus2
 
         [[[parameter MasterMachineType]]]
-        Label = Master Type
-        Description = The machine type for scheduler master and shared filer.
+        Label = Master VM Type
+        Description = The VM type for scheduler master and shared filer.
         ParameterType = Cloud.MachineType
-            [[[[record Config.ProviderDefaults]]]]
-            Azure = Standard_D12
+        DefaultValue = Standard_D12
 
         [[[parameter ExecuteMachineType]]]
-        Label = Execute Type
-        Description = The machine type for execute nodes
+        Label = Execute VM Type
+        Description = The VM type for execute nodes
         ParameterType = Cloud.MachineType
-            [[[[record Config.ProviderDefaults]]]]
-            Azure = Standard_F2
+        DefaultValue = Standard_F2
 
 
     [[parameters Auto-Scaling]]
@@ -115,25 +95,15 @@ Order = 10
         Widget.Plugin = pico.form.BooleanCheckBox
         Widget.Label = Start and stop execute instances automatically
 
-        [[[parameter InitialExecuteCoreCount]]]
-        Label = Initial Cores
-        Description = The number of execute cores to launch on startup
-        DefaultValue = 0
-        Config.Plugin = pico.form.NumberTextBox
-        Config.MinValue = 0
-        Config.MaxValue = 000
-        Config.IntegerOnly = true
-
         [[[parameter MaxExecuteCoreCount]]]
         Label = Max Cores
         Description = The total number of execute cores to start
-        DefaultValue = 10
+        DefaultValue = 100
         Config.Plugin = pico.form.NumberTextBox
         Config.MinValue = 1
-        Config.MaxValue = 5000
         Config.IntegerOnly = true
 
-        [[[parameter azureUseLowPrio]]]
+        [[[parameter UseLowPrio]]]
         Label = Use Low Prio Instances
         DefaultValue = false
         Widget.Plugin = pico.form.BooleanCheckBox
@@ -142,33 +112,10 @@ Order = 10
     [[parameters Networking]]
     Order = 40
 
-
-        [[[parameter ReturnProxy]]]
-        Label = Return Proxy
-        DefaultValue = true
-        ParameterType = Boolean
-        Config.Label = Use SSH tunnel to connect to CycleCloud (required if direct access is blocked)
-
-        [[[parameter UsePublicNetwork]]]
-        Label = Public Head Node
-        DefaultValue = true
-        ParameterType = Boolean
-        Config.Label = Access master node from the Internet
-
-        [[[parameter ExecuteNodesPublic]]]
-        Label = Public Execute
-        DefaultValue = false
-        ParameterType = Boolean
-        Config.Label = Access execute nodes from the Internet
-        Conditions.Excluded := UsePublicNetwork isnt true
-
         [[[parameter SubnetId]]]
         Label = Subnet ID
         Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
-        Conditions.Required := CloudProvider === "Azure"
-        Conditions.Excluded := CloudProvider !== "Azure"
         ParameterType = Azure.Subnet
-
 
 
 [parameters Advanced Settings]
@@ -176,34 +123,22 @@ Order = 20
 
     [[parameters Azure Settings]]
     Order = 10 
+
         [[[parameter Credentials]]]
         Description = The credentials for the cloud provider
         ParameterType = Cloud.Credentials
 
-        [[[parameter KeyPairLocation]]]
-        Label = Keypair Path
-        Description = The path to the private SSH key to use for the `cyclecloud` user on the nodes.
-        DefaultValue = /opt/cycle_server/.ssh/cyclecloud.pem
-        Required = True
-
-        [[[parameter CloudProvider]]]
-        Label = Cloud Provider
-        ParameterType = Cloud.Provider
-        DefaultValue = azure
-        Hidden = true
-
     [[parameters Slurm Settings ]]
-    Description = "Section for configuring Slurm versions etc"
     Order = 20
 
         [[[parameter SlurmVersion]]]
         Label = Slurm Version
         Description = Slurm version to use
-        DefaultValue = 17.11.7
+        DefaultValue = 17.11.7-1
 
 
     [[parameters Software]]
-    Description = "Specify the scheduling software, and base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker."
+    Description = "Specify the base OS installed on all nodes, and optionally the cluster-init and chef versions from your Locker."
     Order = 30
 
         [[[parameter ImageName]]]
@@ -229,4 +164,26 @@ Order = 20
         DefaultValue = =undefined
         Description = Cluster init specs to apply to execute nodes
         ParameterType = Cloud.ClusterInitSpecs
+
+    [[parameters Advanced Networking]]
+    Description = Advanced networking settings
+
+        [[[parameter ReturnProxy]]]
+        Label = Return Proxy
+        DefaultValue = false
+        ParameterType = Boolean
+        Config.Label = Use SSH tunnel to connect to CycleCloud (required if direct access is blocked)
+
+        [[[parameter UsePublicNetwork]]]
+        Label = Public Head Node
+        DefaultValue = true
+        ParameterType = Boolean
+        Config.Label = Access master node from the Internet
+
+        [[[parameter ExecuteNodesPublic]]]
+        Label = Public Execute
+        DefaultValue = false
+        ParameterType = Boolean
+        Config.Label = Access execute nodes from the Internet
+        Conditions.Excluded := UsePublicNetwork isnt true
 
