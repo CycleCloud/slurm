@@ -14,6 +14,7 @@ Autoscale = $Autoscale
     ImageName = $ImageName
     SubnetId = $SubnetId
     Region = $Region
+    UsePublicNetwork = $UsePublicNetwork
     KeyPairLocation = ~/.ssh/cyclecloud.pem
     AdditionalClusterInitSpecs = $DefaultClusterInitSpecs
     
@@ -120,6 +121,7 @@ Order = 10
         Label = Subnet ID
         Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
         ParameterType = Azure.Subnet
+        Required = true
 
 
 [parameters Advanced Settings]
