@@ -18,7 +18,7 @@ Autoscale = $Autoscale
     KeyPairLocation = ~/.ssh/cyclecloud.pem
     AdditionalClusterInitSpecs = $DefaultClusterInitSpecs
     
-        [[[cluster-init slurm:default:1.0.0]]]
+        [[[cluster-init cyclecloud/slurm:default:1.0.0]]]
 
         [[[configuration]]]
         slurm.version = $SlurmVersion
@@ -28,7 +28,7 @@ Autoscale = $Autoscale
     IsReturnProxy = $ReturnProxy
     AdditionalClusterInitSpecs = $MasterClusterInitSpecs
     
-        [[[cluster-init slurm:master:1.0.0]]]
+        [[[cluster-init cyclecloud/slurm:master:1.0.0]]]
 
         [[[input-endpoint ganglia]]]
         PrivatePort = 8652
@@ -42,7 +42,7 @@ Autoscale = $Autoscale
     Interruptible = $UseLowPrio
     AdditionalClusterInitSpecs = $ExecuteClusterInitSpecs
 
-        [[[cluster-init slurm:execute:1.0.0]]]
+        [[[cluster-init cyclecloud/slurm:execute:1.0.0]]]
 
         [[[network-interface]]]
         AssociatePublicIpAddress = $ExecuteNodesPublic
