@@ -77,6 +77,12 @@ Order = 10
         ParameterType = Cloud.Region
         DefaultValue = westus2
 
+        [[[parameter SubnetId]]]
+        Label = Subnet ID
+        Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
+        ParameterType = Azure.Subnet
+        Required = true
+
         [[[parameter MasterMachineType]]]
         Label = Master VM Type
         Description = The VM type for scheduler master and shared filer.
@@ -109,20 +115,10 @@ Order = 10
         Config.IntegerOnly = true
 
         [[[parameter UseLowPrio]]]
-        Label = Use Low Prio Instances
+        Label = Low Priority
         DefaultValue = false
         Widget.Plugin = pico.form.BooleanCheckBox
         Widget.Label = Use low priority instances for execute hosts
-
-    [[parameters Networking]]
-    Order = 40
-
-        [[[parameter SubnetId]]]
-        Label = Subnet ID
-        Description = Subnet Resource Path (ResourceGroup/VirtualNetwork/Subnet)
-        ParameterType = Azure.Subnet
-        Required = true
-
 
 [parameters Advanced Settings]
 Order = 20
