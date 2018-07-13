@@ -5,7 +5,7 @@
 
 [cluster Slurm]
 FormLayout = selectionpanel
-IconUrl = https://github.com/CycleCloud/slurm/raw/master/logo.png
+Category = Infrastructure
 
 Autoscale = $Autoscale
 
